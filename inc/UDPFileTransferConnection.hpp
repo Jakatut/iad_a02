@@ -7,21 +7,26 @@
 #include <vector>
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
 	typedef int SOCKET;
+#elif defined(_WIN32)
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+	#pragma comment(lib,"ws2_32.lib")
 #endif
 
 
-namespace FileTransfer {
+namespace Net {
 
 	class UDPConnection {
 
 		private:
 			Net::Address connectedAddress;
-			SOCKET connectionSocket;
+			SOCKET clientSocket;
 
 		public:
-			UDPConnection(SOCKET connectionSocket, Net::Address connectedAddress): 
-				connectedAddress(connectedAddress),connectionSocket(connectionSocket) {};
+			UDPConnection(SOCKET clientSocket, Net::Address connectedAddress);
 
 			int SendData(std::vector<unsigned char>& data);
 			std::vector<unsigned char> ReceiveData();
