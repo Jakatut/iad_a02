@@ -23,13 +23,8 @@ namespace FileTransfer {
 			UDPConnection(SOCKET connectionSocket, Net::Address connectedAddress): 
 				connectedAddress(connectedAddress),connectionSocket(connectionSocket) {};
 
-			int SendData(std::stringstream& data);
-			int SendData(const std::string& data);
 			int SendData(std::vector<unsigned char>& data);
-
-			template<typename T>
-			T ReceiveData();
-
+			std::vector<unsigned char> ReceiveData();
 			void closeConnection();
 	};
 }
