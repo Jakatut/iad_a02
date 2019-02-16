@@ -4,7 +4,7 @@
 	Author: Glenn Fiedler <gaffer@gaffer.org>
 */
 
-
+#include "CommandLineParser.hpp"
 #include "NetUtilities.hpp"
 #include "FlowControl.hpp"
 #include "Socket.hpp"
@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 
 
@@ -36,10 +37,26 @@ const int PacketSize = 256;
 
 
 
-int main( int argc, char * argv[] )
+int main( int argc, char * argv[])
 {
+	// parse command line arguments.
+	std::map<std::string, bool> switches{
 	
-	// parse command line
+		{"-ip", true},
+		{"-port", true},
+		{"-file", true}
+	};
+	CommandLineParser parser{switches, " "};
+	std::map<std::string, std::string> arguments = parser.GetArguments(argc, argv);
+
+
+	std::string fileData = "No file selected";
+
+	if (arguments.find("-file") != arguments.end()) {
+
+		std::fstream file{ arguments.at("-file") };
+		file >> fileData;
+	}
 
 	enum Mode
 	{
@@ -53,14 +70,12 @@ int main( int argc, char * argv[] )
 	if ( argc >= 2 )
 	{
 		int a,b,c,d;
-		if ( sscanf( argv[1], "%d.%d.%d.%d", &a, &b, &c, &d ) )
+		if ( sscanf( arguments.at("-ip").c_str(), "%d.%d.%d.%d", &a, &b, &c, &d ) )
 		{
 			mode = Client;
-			address = Net::Address(a,b,c,d,ServerPort);
+			address = Net::Address(a, b, c, d, static_cast<unsigned short>(std::stoi(arguments.at("-port"))));
 		}
 	}
-
-	// initialize
 
 	if ( !Net::InitializeSockets() )
 	{
@@ -105,7 +120,6 @@ int main( int argc, char * argv[] )
 		const float sendRate = flowControl.GetSendRate();
 
 		// detect changes in connection state
-
 		if ( mode == Server && connected && !connection.IsConnected() )
 		{
 			flowControl.Reset();
@@ -126,23 +140,25 @@ int main( int argc, char * argv[] )
 		}
 		
 		// send and receive packets
-		
 		sendAccumulator += DeltaTime;
 		
 		while ( sendAccumulator > 1.0f / sendRate )
 		{
 			unsigned char packet[PacketSize] = "Hello, World!";
-			connection.SendPacket( packet, sizeof( packet ) );
+			//connection.SendPacket(packet, sizeof(packet));
+			connection.SendPacket( reinterpret_cast<const unsigned char*>(fileData.c_str()), fileData.size() + 1 );
 			sendAccumulator -= 1.0f / sendRate;
 		}
 		
 		while ( true )
 		{
-			unsigned char packet[256];
+			unsigned char packet[256] = {0};
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
+			
 			if (bytes_read == 0) {
 				break;
 			}
+			std::cout << packet << std::endl;
 		}
 		
 		// show packets that were acked this frame
