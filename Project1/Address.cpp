@@ -1,146 +1,76 @@
 #include "Address.hpp"
-#include <string>
-#include <iostream>
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
-	#include <netinet/in.h>
-	#include <arpa/inet.h>
-#elif defined(_WIN32)
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
-	#pragma comment(lib,"ws2_32.lib")
-#endif
+Net::Address::Address() {
 
-constexpr unsigned short minimumPort = 1024;
-
-
-/*!
- *
- *	@brief <p>Address Constructor</p>
- *
- *	@detail <p>Validates that the port is not in the reserved values and that the ip address is valid.</p>
- *
- *	@param[in] <b>const std::string</b> - ipAddress - The ip address.
- *
- *	@param[in] <b>const unsigned short</b> - port - The port.
- *
- *	@throws invalid_argument - The port is invalid or the ip address is invalid.
- *
- */
-Net::Address::Address(const std::string ipAddress, const unsigned short port): ipAddress(ipAddress), port(port) {
-
-	if(port < minimumPort) {
-
-		throw std::invalid_argument("Cannot use reserved ports: 0 - 1023.\n");		
-	}
-
-	struct sockaddr_in sockAddr;
-	bool valid = false;
-
-	#if defined(unix) || defined(__unix__) || defined(__unix) 
-		valid = inet_pton(AF_INET, ipAddress.c_str(), &(sockAddr.sin_addr)) == 1;
-	#elif defined(_WIN32)
-		WSADATA wsaData;
-		if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0) {
-
-			std::cerr << "WASStartup failed.\n";
-		}
-
-		valid = InetPtonW(AF_INET, reinterpret_cast<PCWSTR>(ipAddress.c_str()), &(sockAddr.sin_addr)) == 0;
-
-		WSACleanup();
-	#endif
-
-	if(!valid) {
-
-		throw std::invalid_argument("IP Address '" + ipAddress + "'is invalid.\n");
-	}
+	address = 0;
+	port = 0;
 }
 
 
-/*!
- *
- *	@brief <p>Accessor for the ipAddress data member</p>
- *
- *	@return <b>std::string</b> - The ip address.
- *
- */
-std::string Net::Address::GetIPAddress() {
+Net::Address::Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d, unsigned short port) {
 
-	return ipAddress;
+	this->address = (a << 24) | (b << 16) | (c << 8) | d;
+	this->port = port;
+}
+
+Net::Address::Address(unsigned int address, unsigned short port) {
+
+
+	this->address = address;
+	this->port = port;
 }
 
 
-/*!
- *
- *	@brief <p>Mutator for the ipAddress data member.</p>
- *
- *	@details <p>Validates the ip before assigning it</p>
- * 
- *	@param[in] <b>const std::string</b> - ipAddress - The new ipAddress
- *
- *	@throws invalid_argument - The ip address is invalid.
- *
- */
-void Net::Address::SetIPAddress(const std::string ipAddress) {
+unsigned int Net::Address::GetAddress() const {
 
-
-	struct sockaddr_in sockAddr;
-	bool valid = false;
-
-	#if defined(unix) || defined(__unix__) || defined(__unix) 
-		valid = inet_pton(AF_INET, ipAddress.c_str(), &(sockAddr.sin_addr)) == 1;
-	#elif defined(_WIN32)
-		WSADATA wsaData;
-		if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0) {
-
-			std::cerr << "WASStartup failed.\n";
-		}
-
-		valid = InetPtonW(AF_INET, reinterpret_cast<PCWSTR>(ipAddress.c_str()), &(sockAddr.sin_addr)) == 0;
-
-		WSACleanup();
-	#endif
-
-	if(!valid) {
-
-		throw std::invalid_argument("IP Address '" + ipAddress + "'is invalid.\n");
-	}
-
-	this->ipAddress = ipAddress;
+	return address;
 }
 
 
-/*!
- *
- *	@brief <p>Accessor for the port data member</p>
- *
- *	@return <b>unsigned short</b> - The port.
- *
- */
-unsigned short Net::Address::GetPort() {
+unsigned char Net::Address::GetA() const {
+
+	return (unsigned char)(address >> 24);
+}
+
+unsigned char Net::Address::GetB() const {
+
+	return (unsigned char)(address >> 16);
+}
+
+unsigned char Net::Address::GetC() const {
+
+	return (unsigned char)(address >> 8);
+}
+
+unsigned char Net::Address::GetD() const {
+
+	return (unsigned char)(address);
+}
+
+
+unsigned short Net::Address::GetPort() const {
 
 	return port;
 }
 
 
-/*!
- *
- *	@brief <p>Mutator for the port data member</p>
- *
- *	@details <p>Validates the port by checking if it is not in the reserved range (0 - 1023).</p>
- *
- *	@param[in] <b>unsigned short</b> - port - The new port.
- *
- *	@throws invalid_argument - the port is invalid.
- *
- */
-void Net::Address::ChangePort(const unsigned short port) {
+bool Net::Address::operator== (const Address & other) const {
 
-	if(port < minimumPort) {
+	return address == other.address && port == other.port;
+}
 
-		throw std::invalid_argument("Cannot use reserved ports: 0 - 1023.\n");		
-	}
+bool Net::Address::operator!= (const Address & other) const {
 
-	this->port = port;
+	return !(*this == other);
+}
+
+bool Net::Address::operator< (const Address & other) const {
+
+	// note: this is so we can use address as a key in std::map
+	if (address < other.address)
+		return true;
+	if (address > other.address)
+		return false;
+	else
+		return port < other.port;
 }
