@@ -1,5 +1,7 @@
 #include "Connection.hpp"
+#include <iostream>
 
+constexpr int MINIMUM_PORT = 1024;
 
 // PUBLIC MEMBER METHODS
 
@@ -22,8 +24,14 @@ Net::Connection::~Connection() {
 
 bool Net::Connection::Start(int port) {
 
+	if (port < MINIMUM_PORT) {
+
+		std::cout << "Cannot use reserved ports: 0 - 1023.\n";
+		return false;
+	}
+
 	assert(!running);
-	printf("start connection on port %d\n", port);
+	std::cout << "start connection on port " << port << '\n';
 	if (!socket.Open(port)) {
 
 		return false;
@@ -37,7 +45,7 @@ bool Net::Connection::Start(int port) {
 void Net::Connection::Stop() {
 
 	assert(running);
-	printf("stop connection\n");
+	std::cout << "stop connection\n";
 	bool connected = IsConnected();
 	ClearData();
 	socket.Close();
@@ -58,7 +66,7 @@ bool Net::Connection::IsRunning() const {
 
 void Net::Connection::Listen() {
 
-	printf("server listening for connection\n");
+	std::cout << "server listening for connection\n";
 	bool connected = IsConnected();
 	ClearData();
 	if (connected) {
@@ -72,8 +80,7 @@ void Net::Connection::Listen() {
 
 void Net::Connection::Connect(const Address & address) {
 
-	printf("client connecting to %d.%d.%d.%d:%d\n",
-	address.GetA(), address.GetB(), address.GetC(), address.GetD(), address.GetPort());
+	std::cout << "client connecting to %d.%d.%d.%d:%d\n" << address.GetA() << address.GetB() << address.GetC() << address.GetD() << address.GetPort();
 	bool connected = IsConnected();
 	ClearData();
 	if (connected) {
@@ -124,14 +131,14 @@ void Net::Connection::Update(float deltaTime) {
 	{
 		if (state == Connecting)
 		{
-			printf("connect timed out\n");
+			std::cout << "connect timed out\n";
 			ClearData();
 			state = ConnectFail;
 			OnDisconnect();
 		}
 		else if (state == Connected)
 		{
-			printf("connection timed out\n");
+			std::cout << "connection timed out\n";
 			ClearData();
 			if (state == Connecting) {
 
@@ -192,8 +199,7 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 	}
 	if (mode == Server && !IsConnected())
 	{
-		printf("server accepts connection from client %d.%d.%d.%d:%d\n",
-			sender.GetA(), sender.GetB(), sender.GetC(), sender.GetD(), sender.GetPort());
+		std::cout << "server accepts connection from client " << sender.GetA() << sender.GetB() << sender.GetC() << sender.GetD() << sender.GetPort() << '\n';
 		state = Connected;
 		address = sender;
 		OnConnect();
@@ -202,7 +208,7 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 	{
 		if (mode == Client && state == Connecting)
 		{
-			printf("client completes connection with server\n");
+			std::cout << "client completes connection with server\n";
 			state = Connected;
 			OnConnect();
 		}
