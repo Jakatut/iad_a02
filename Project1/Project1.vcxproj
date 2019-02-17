@@ -124,6 +124,7 @@
     <ClInclude Include="CommandLineParser.hpp" />
     <ClInclude Include="Connection.hpp" />
     <ClInclude Include="DataHash.hpp" />
+    <ClInclude Include="FileIO.hpp" />
     <ClInclude Include="FlowControl.hpp" />
     <ClInclude Include="NetUtilities.hpp" />
     <ClInclude Include="PacketQueue.hpp" />
@@ -137,6 +138,7 @@
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="DataHash.cpp" />
     <ClCompile Include="Example.cpp" />
+    <ClCompile Include="FileIO.cpp" />
     <ClCompile Include="FlowControl.cpp" />
     <ClCompile Include="NetUtilities.cpp" />
     <ClCompile Include="PacketQueue.cpp" />

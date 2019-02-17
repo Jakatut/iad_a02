@@ -45,6 +45,9 @@
     <ClInclude Include="CommandLineParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FileIO.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NetUtilities.cpp">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CommandLineParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
