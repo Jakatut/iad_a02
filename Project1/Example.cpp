@@ -24,7 +24,7 @@
 
 
 
-#define SHOW_ACKS
+//#define SHOW_ACKS
 #pragma warning (disable:4996)
 
 
@@ -58,7 +58,7 @@ int main( int argc, char * argv[])
 	
 	if (arguments.find("-file") != arguments.end()) {
 
-		FileIO input{  arguments.at("-file"), true };
+		FileIO input{ arguments.at("-file") };
 		input.Read();
 		fileData = input.GetTextRead();
 	}
@@ -139,6 +139,7 @@ int main( int argc, char * argv[])
 	FlowControl flowControl;
 	
 	long long currentFileLocation = 0;
+	int bytesLeft = fileData.size();
 
 	while (currentFileLocation != fileData.size())
 	{
@@ -179,7 +180,7 @@ int main( int argc, char * argv[])
 		}
 		
 
-		int bytesLeft = fileData.size() - currentFileLocation;
+		bytesLeft = fileData.size() - currentFileLocation;
 
 		std::string currentData;
 		if (bytesLeft > PacketSize) {
@@ -195,8 +196,6 @@ int main( int argc, char * argv[])
 			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
 		}
 
-		std::cout << currentData;
-		
 
 		while (true)
 		{
@@ -214,10 +213,9 @@ int main( int argc, char * argv[])
 				output.Write(reinterpret_cast<const char*>(packet));
 			}
 		}
-
 		
 		// show packets that were acked this frame
-		#ifdef SHOW_ACKS
+		#ifndef SHOW_ACKS
 			unsigned int * acks = NULL;
 			int ack_count = 0;
 			connection.GetReliabilitySystem().GetAcks( &acks, ack_count );
@@ -247,10 +245,10 @@ int main( int argc, char * argv[])
 			float sent_bandwidth = connection.GetReliabilitySystem().GetSentBandwidth();
 			float acked_bandwidth = connection.GetReliabilitySystem().GetAckedBandwidth();
 			
-			/*printf( "rtt %.1fms, sent %d, acked %d, lost %d (%.1f%%), sent bandwidth = %.1fkbps, acked bandwidth = %.1fkbps\n", 
+			printf( "rtt %.1fms, sent %d, acked %d, lost %d (%.1f%%), sent bandwidth = %.1fkbps, acked bandwidth = %.1fkbps\n", 
 				rtt * 1000.0f, sent_packets, acked_packets, lost_packets, 
 				sent_packets > 0.0f ? (float) lost_packets / (float) sent_packets * 100.0f : 0.0f, 
-				sent_bandwidth, acked_bandwidth);*/
+				sent_bandwidth, acked_bandwidth);
 			
 			statsAccumulator -= 0.25f;
 		}
@@ -260,6 +258,8 @@ int main( int argc, char * argv[])
 	
 	Net::ShutdownSockets();
 	Net::ShutdownSockets();
+
+	std::cout << std::endl << DataHash::MD5HashData(fileData) << std::endl;
 
 	return 0;
 }
