@@ -50,8 +50,10 @@ void Net::ReliabilitySystem::PacketSent(int size) {
 	pendingAckQueue.push_back(data);
 	sent_packets++;
 	local_sequence++;
-	if (local_sequence > max_sequence)
+	if (local_sequence > max_sequence) {
+		
 		local_sequence = 0;
+	}
 }
 
 

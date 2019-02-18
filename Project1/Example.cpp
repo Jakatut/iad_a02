@@ -1,9 +1,10 @@
-/*
+﻿/*
 	Reliability and Flow Control Example
 	From "Networking for Game Programmers" - http://www.gaffer.org/networking-for-game-programmers
 	Author: Glenn Fiedler <gaffer@gaffer.org>
 */
 
+#include "FileIO.hpp"
 #include "CommandLineParser.hpp"
 #include "NetUtilities.hpp"
 #include "FlowControl.hpp"
@@ -23,7 +24,7 @@
 
 
 
-#define SHOW_ACKS
+//#define SHOW_ACKS
 #pragma warning (disable:4996)
 
 
@@ -34,12 +35,14 @@ const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
 const float TimeOut = 10.0f;
 const int PacketSize = 256;
-
-
+constexpr int CLIENT_ARGUMENT_COUNT = 3;
 
 int main( int argc, char * argv[])
 {
-	// parse command line arguments.
+
+	unsigned short port = 0;
+
+	// Parse command line arguments.
 	std::map<std::string, bool> switches{
 	
 		{"-ip", true},
@@ -50,50 +53,68 @@ int main( int argc, char * argv[])
 	std::map<std::string, std::string> arguments = parser.GetArguments(argc, argv);
 
 
-	std::string fileData = "No file selected";
-
+	// Get the file data.
+	std::string fileData = "No file selected.";
+	
 	if (arguments.find("-file") != arguments.end()) {
 
-		std::fstream file{ arguments.at("-file") };
-		file >> fileData;
+		FileIO input{  arguments.at("-file") };
+		input.Read();
+		fileData = input.GetTextRead();
 	}
 
-	enum Mode
-	{
-		Client,
-		Server
-	};
 
-	Mode mode = Server;
 	Net::Address address;
+	Net::Mode mode;
 
-	if ( argc >= 2 )
-	{
-		int a,b,c,d;
-		if ( sscanf( arguments.at("-ip").c_str(), "%d.%d.%d.%d", &a, &b, &c, &d ) )
-		{
-			mode = Client;
-			address = Net::Address(a, b, c, d, static_cast<unsigned short>(std::stoi(arguments.at("-port"))));
+	// Determine if the mode is client or server.
+	if (argc >= CLIENT_ARGUMENT_COUNT) {
+
+		mode = Net::Mode::CLIENT;
+
+		// Get the ip and port for the client connection address.
+		if ((arguments.find("-ip") != arguments.end()) && (arguments.find("-ip") != arguments.end())) {
+
+			int ipA = 0;
+			int ipB = 0;
+			int ipC = 0;
+			int ipD = 0;
+			if (sscanf(arguments.at("-ip").c_str(), "%d.%d.%d.%d", &ipA, &ipB, &ipC, &ipD)) {
+
+				address = Net::Address(ipA, ipB, ipC, ipD, static_cast<unsigned short>(std::stoi(arguments.at("-port"))));
+
+				port = static_cast<unsigned short>(std::stoi(arguments.at("-port")));
+			}
+		}
+	}
+	else {
+
+		mode = Net::Mode::CLIENT;
+
+		// Get port for server to listen.
+		if (arguments.find("-port") != arguments.end()) {
+
+			port = static_cast<unsigned short>(std::stoi(arguments.at("-port")));
 		}
 	}
 
-	if ( !Net::InitializeSockets() )
-	{
-		printf( "failed to initialize sockets\n" );
+	// WSA startup
+	if (!Net::InitializeSockets()) {
+
+		std::cout << "Failed to initalize sockets.\n";
 		return 1;
 	}
 
-	Net::ReliableConnection connection( ProtocolId, TimeOut );
-	
-	const int port = mode == Server ? ServerPort : ClientPort;
-	
-	if ( !connection.Start( port ) )
-	{
-		printf( "could not start connection on port %d\n", port );
+	Net::ReliableConnection connection(ProtocolId, TimeOut);
+
+	if (!connection.Start(port)) {
+
+		std::cout << "Unable to start connection on port " << port << '\n';
+		Net::ShutdownSockets();
 		return 1;
 	}
-	
-	if (mode == Client) {
+
+	if (mode == Net::Mode::CLIENT) {
 
 		connection.Connect(address);
 	}
@@ -101,17 +122,16 @@ int main( int argc, char * argv[])
 
 		connection.Listen();
 	}
-	
+
 	bool connected = false;
 	float sendAccumulator = 0.0f;
 	float statsAccumulator = 0.0f;
 	
 	FlowControl flowControl;
 	
-	while ( true )
+	while (true)
 	{
 		// update flow control
-		
 		if (connection.IsConnected()) {
 
 			flowControl.Update(DeltaTime, connection.GetReliabilitySystem().GetRoundTripTime() * 1000.0f);
@@ -120,7 +140,7 @@ int main( int argc, char * argv[])
 		const float sendRate = flowControl.GetSendRate();
 
 		// detect changes in connection state
-		if ( mode == Server && connected && !connection.IsConnected() )
+		if (mode == Net::Mode::SERVER && connected && !connection.IsConnected() )
 		{
 			flowControl.Reset();
 			printf( "reset flow control\n" );
@@ -144,7 +164,7 @@ int main( int argc, char * argv[])
 		
 		while ( sendAccumulator > 1.0f / sendRate )
 		{
-			unsigned char packet[PacketSize] = "Hello, World!";
+			//unsigned char packet[PacketSize] = "Hello, World!";
 			//connection.SendPacket(packet, sizeof(packet));
 			connection.SendPacket( reinterpret_cast<const unsigned char*>(fileData.c_str()), fileData.size() + 1 );
 			sendAccumulator -= 1.0f / sendRate;
@@ -156,6 +176,7 @@ int main( int argc, char * argv[])
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
 			
 			if (bytes_read == 0) {
+				
 				break;
 			}
 			std::cout << packet << std::endl;
@@ -163,16 +184,16 @@ int main( int argc, char * argv[])
 		
 		// show packets that were acked this frame
 		#ifdef SHOW_ACKS
-		unsigned int * acks = NULL;
-		int ack_count = 0;
-		connection.GetReliabilitySystem().GetAcks( &acks, ack_count );
-		if ( ack_count > 0 )
-		{
-			printf( "acks: %d", acks[0] );
-			for ( int i = 1; i < ack_count; ++i )
-				printf( ",%d", acks[i] );
-			printf( "\n" );
-		}
+			unsigned int * acks = NULL;
+			int ack_count = 0;
+			connection.GetReliabilitySystem().GetAcks( &acks, ack_count );
+			if ( ack_count > 0 )
+			{
+				printf( "acks: %d", acks[0] );
+				for ( int i = 1; i < ack_count; ++i )
+					printf( ",%d", acks[i] );
+				printf( "\n" );
+			}
 		#endif
 
 		// update connection
@@ -197,7 +218,7 @@ int main( int argc, char * argv[])
 			printf( "rtt %.1fms, sent %d, acked %d, lost %d (%.1f%%), sent bandwidth = %.1fkbps, acked bandwidth = %.1fkbps\n", 
 				rtt * 1000.0f, sent_packets, acked_packets, lost_packets, 
 				sent_packets > 0.0f ? (float) lost_packets / (float) sent_packets * 100.0f : 0.0f, 
-				sent_bandwidth, acked_bandwidth );
+				sent_bandwidth, acked_bandwidth);
 			
 			statsAccumulator -= 0.25f;
 		}
@@ -207,7 +228,6 @@ int main( int argc, char * argv[])
 	
 	Net::ShutdownSockets();
 	Net::ShutdownSockets();
-
 
 	return 0;
 }

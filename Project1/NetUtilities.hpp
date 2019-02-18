@@ -61,6 +61,13 @@ namespace Net
 		float time;					    // time offset since packet was sent or received (depending on context)
 		int size;						// packet size in bytes
 	};
+
+	enum class Mode {
+	
+		CLIENT,
+		SERVER
+	};
+
 }
 
 #endif /* NETUTILITIES_HPP */
