@@ -138,6 +138,8 @@ int main( int argc, char * argv[])
 	
 	FlowControl flowControl;
 	
+	long long currentFileLocation = 0;
+
 	while (true)
 	{
 		// update flow control
@@ -171,11 +173,24 @@ int main( int argc, char * argv[])
 		// send and receive packets
 		sendAccumulator += DeltaTime;
 		
-		while ( sendAccumulator > 1.0f / sendRate )
-		{
-			//unsigned char packet[PacketSize] = "Hello, World!";
-			//connection.SendPacket(packet, sizeof(packet));
-			connection.SendPacket( reinterpret_cast<const unsigned char*>(fileData.c_str()), fileData.size() + 1 );
+		while ( sendAccumulator > 1.0f / sendRate ) {
+	
+			int bytesLeft = fileData.size() - currentFileLocation;
+
+			std::string currentData;
+			if ( bytesLeft > PacketSize) {
+
+				currentData = fileData.substr(currentFileLocation, PacketSize);
+				currentFileLocation += PacketSize;
+			}
+			else {
+
+				currentData = fileData.substr(currentFileLocation, bytesLeft);
+				currentFileLocation += bytesLeft;
+			}
+
+			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft);
+
 			sendAccumulator -= 1.0f / sendRate;
 		}
 		
