@@ -16,7 +16,7 @@ private:
 
 public:
 
-	FileIO(std::string fileName, bool binary = false);
+	FileIO(std::string fileName, bool binary = false, bool append = false);
 
 	bool Write(std::string text);
 	bool Read();

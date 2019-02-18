@@ -1,9 +1,10 @@
 #include "FileIO.hpp"
 
-FileIO::FileIO(std::string fileName, bool binary) {
+FileIO::FileIO(std::string fileName, bool binary, bool append) {
 
 	this->flags = std::ios::out | std::ios::in;
 	this->flags |= (binary) ? std::ios::binary : 0;
+	this->flags |= (append) ? std::ios::app : 0;
 	this->textRead = "";
 	this->fileName = fileName;
 
