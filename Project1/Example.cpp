@@ -24,7 +24,7 @@
 
 
 
-//#define SHOW_ACKS
+#define SHOW_ACKS
 #pragma warning (disable:4996)
 
 
@@ -58,7 +58,7 @@ int main( int argc, char * argv[])
 	
 	if (arguments.find("-file") != arguments.end()) {
 
-		FileIO input{  arguments.at("-file") };
+		FileIO input{  arguments.at("-file"), true };
 		input.Read();
 		fileData = input.GetTextRead();
 	}
@@ -140,7 +140,7 @@ int main( int argc, char * argv[])
 	
 	long long currentFileLocation = 0;
 
-	while (true)
+	while (currentFileLocation != fileData.size())
 	{
 		// update flow control
 		if (connection.IsConnected()) {
@@ -175,40 +175,44 @@ int main( int argc, char * argv[])
 		
 		while ( sendAccumulator > 1.0f / sendRate ) {
 	
-			int bytesLeft = fileData.size() - currentFileLocation;
-
-			std::string currentData;
-			if ( bytesLeft > PacketSize) {
-
-				currentData = fileData.substr(currentFileLocation, PacketSize);
-				currentFileLocation += PacketSize;
-			}
-			else {
-
-				currentData = fileData.substr(currentFileLocation, bytesLeft);
-				currentFileLocation += bytesLeft;
-			}
-
-			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft);
-
 			sendAccumulator -= 1.0f / sendRate;
 		}
 		
+
+		int bytesLeft = fileData.size() - currentFileLocation;
+
+		std::string currentData;
+		if (bytesLeft > PacketSize) {
+
+			currentData = fileData.substr(currentFileLocation, PacketSize);
+			currentFileLocation += PacketSize;
+			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1);
+		}
+		else {
+
+			currentData = fileData.substr(currentFileLocation, bytesLeft - 1);
+			currentFileLocation += bytesLeft;
+			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
+		}
+
+		std::cout << currentData;
 		
 
-		while ( mode == Net::Mode::SERVER )
+		while (true)
 		{
 			unsigned char packet[256] = {0};
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
-			
+			std::cout << packet;
 			if (bytes_read == 0) {
 				
 				break;
 			}
 			
-			FileIO output("received.3gp", true, true);
-			output.Write(reinterpret_cast<const char*>(packet));
-
+			if (mode == Net::Mode::SERVER) {
+			
+				FileIO output("received.3gp", true, true);
+				output.Write(reinterpret_cast<const char*>(packet));
+			}
 		}
 
 		
