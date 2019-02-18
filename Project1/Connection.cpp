@@ -22,7 +22,7 @@ Net::Connection::~Connection() {
 }
 
 
-bool Net::Connection::Start(int port) {
+bool Net::Connection::Start(int port, std::string ip, bool client) {
 
 	if (port < MINIMUM_PORT) {
 
@@ -32,7 +32,7 @@ bool Net::Connection::Start(int port) {
 
 	assert(!running);
 	std::cout << "start connection on port " << port << '\n';
-	if (!socket.Open(port)) {
+	if (!socket.Open(port, ip, client)) {
 
 		return false;
 	}
@@ -80,7 +80,11 @@ void Net::Connection::Listen() {
 
 void Net::Connection::Connect(const Address & address) {
 
-	std::cout << "client connecting to %d.%d.%d.%d:%d\n" << address.GetA() << address.GetB() << address.GetC() << address.GetD() << address.GetPort();
+	std::cout << "client connecting to " << static_cast<unsigned short>(address.GetA()) << '.' 
+											<< static_cast<unsigned short>(address.GetB()) << '.' 
+											<< static_cast<unsigned short>(address.GetC()) << '.'
+											<< static_cast<unsigned short>(address.GetD())
+											<< ": " << address.GetPort() << '\n';
 	bool connected = IsConnected();
 	ClearData();
 	if (connected) {

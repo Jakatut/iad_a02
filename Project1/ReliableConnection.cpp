@@ -17,11 +17,15 @@ bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size) {
 			return true;
 		}
 	#endif
+
 	const int header = 12;
 	unsigned char* packet = new unsigned char[header + size];
+
 	unsigned int seq = reliabilitySystem.GetLocalSequence();
 	unsigned int ack = reliabilitySystem.GetRemoteSequence();
 	unsigned int ack_bits = reliabilitySystem.GenerateAckBits();
+
+
 	WriteHeader(packet, seq, ack, ack_bits);
 	std::memcpy(packet + header, data, size);
 	if (!Connection::SendPacket(packet, size + header)) {

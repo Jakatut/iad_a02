@@ -66,7 +66,7 @@ namespace Net {
 			Mode GetMode() const;
 
 		// Functional
-			bool Start(int port);
+			bool Start(int port, std::string ip, bool client);
 			void Connect(const Address & address);
 			void Stop();
 			void Listen();

@@ -48,7 +48,7 @@ namespace Net {
 
 			// Functional
 				void Close();
-				bool Open(unsigned short port);
+				bool Open(unsigned short port, std::string ip, bool client);
 				bool IsOpen() const;
 				bool Send(const Address & destination, const void * data, int size);
 				int Receive(Address & sender, void * data, int size);

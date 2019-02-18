@@ -1,6 +1,6 @@
 #include "Socket.hpp"
 
-
+#pragma warning (disable:4996)
 
 Net::Socket::Socket()
 {
@@ -14,7 +14,7 @@ Net::Socket::~Socket()
 }
 
 
-bool Net::Socket::Open(unsigned short port)
+bool Net::Socket::Open(unsigned short port, std::string ip, bool client)
 {
 	assert(!IsOpen());
 
@@ -22,7 +22,7 @@ bool Net::Socket::Open(unsigned short port)
 
 	socket = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if (socket <= 0)
+	if (socket == INVALID_SOCKET)
 	{
 		printf("failed to create socket\n");
 		socket = 0;
@@ -30,13 +30,20 @@ bool Net::Socket::Open(unsigned short port)
 	}
 
 	// bind to port
-
 	sockaddr_in address;
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons((unsigned short)port);
 
-	if (::bind(socket, (const sockaddr*)&address, sizeof(sockaddr_in)) < 0)
+	if (client) {
+		
+		address.sin_addr.S_un.S_addr = inet_addr(ip.c_str());
+	}
+	else {
+
+		address.sin_addr.s_addr = INADDR_ANY;
+	}
+	address.sin_port = htons(port);
+
+	if (!client && ::bind(socket, (const sockaddr*)&address, sizeof(address)) == SOCKET_ERROR)
 	{
 		printf("failed to bind socket\n");
 		Close();
@@ -91,7 +98,7 @@ bool Net::Socket::IsOpen() const
 }
 
 
-bool Net::Socket::Send(const Net::Address & destination, const void * data, int size)
+bool Net::Socket::Send(const Net::Address & destination, const void* data, int size)
 {
 	assert(data);
 	assert(size > 0);
@@ -109,7 +116,7 @@ bool Net::Socket::Send(const Net::Address & destination, const void * data, int 
 	address.sin_addr.s_addr = htonl(destination.GetAddress());
 	address.sin_port = htons((unsigned short)destination.GetPort());
 
-	int sent_bytes = sendto(socket, (const char*)data, size, 0, (sockaddr*)&address, sizeof(sockaddr_in));
+	int sent_bytes = sendto(socket, (const char*)data, size, 0, (sockaddr*)&address, sizeof(address));
 
 	return sent_bytes == size;
 }
