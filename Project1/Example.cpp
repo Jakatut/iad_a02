@@ -35,7 +35,7 @@ const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
 const float TimeOut = 10.0f;
 const int PacketSize = 256;
-constexpr int CLIENT_ARGUMENT_COUNT = 3;
+constexpr int CLIENT_ARGUMENT_COUNT = 6;
 
 int main( int argc, char * argv[])
 {
