@@ -37,7 +37,7 @@ bool FileIO::Write(std::string text) {
 	if (!this->file.is_open() || !this->file) { return false; }
 
 	// write to the file
-	this->file << text.c_str() + '\0';
+	this->file << text;
 
 	CloseFile();
 
@@ -58,7 +58,7 @@ bool FileIO::Read() {
 	while (this->file.good()) {
 
 		std::getline(this->file, line);
-		this->textRead += line + "\n";
+		this->textRead += line;
 
 	}
 

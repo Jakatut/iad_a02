@@ -1,8 +1,7 @@
 #ifndef DATAHASH_HPP
 #define DATAHASH_HPP
 
-
-#include <openssl/md5.h>
+#include <openssl\md5.h>
 #include <string>
 #include <sstream>
 #include <vector>

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-ip 10.113.21.173 -port 8089 -file C:\Users\Cmacpherson1766\Desktop\wonderland.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-ip 192.168.0.25 -port 8089 -file C:\Users\conma\Desktop\art.png</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

@@ -33,9 +33,9 @@ const int ClientPort = 30001;
 const int ProtocolId = 0x11223344;
 const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
-const float TimeOut = 10.0f;
+const float TimeOut = 100000.0f;
 const int PacketSize = 256;
-constexpr int CLIENT_ARGUMENT_COUNT = 6;
+const int CLIENT_ARGUMENT_COUNT = 6;
 
 int main( int argc, char * argv[])
 {
@@ -43,7 +43,7 @@ int main( int argc, char * argv[])
 	unsigned short port = 0;
 
 	// Parse command line arguments.
-	std::map<std::string, bool> switches{
+	std::map<std::string, bool> switches {
 	
 		{"-ip", true},
 		{"-port", true},
@@ -55,14 +55,23 @@ int main( int argc, char * argv[])
 
 	// Get the file data.
 	std::string fileData = "No file selected.";
-	
+	std::vector<char> buffer;
 	if (arguments.find("-file") != arguments.end()) {
 
-		FileIO input{ arguments.at("-file") };
+		/*FileIO input{ arguments.at("-file"), true };
 		input.Read();
 		fileData = input.GetTextRead();
-	}
 
+		FileIO output{ "test.jpg", true };
+
+		output.Write(input.GetTextRead());*/
+
+		std::ifstream input{ arguments.at("-file"), std::ios::binary | std::ios::in };
+
+		buffer = std::vector<char>{ std::istreambuf_iterator<char>(input), {} };
+
+		
+	}
 
 	Net::Address address;
 	Net::Mode mode;
@@ -107,7 +116,6 @@ int main( int argc, char * argv[])
 
 	Net::ReliableConnection connection(ProtocolId, TimeOut);
 
-
 	if (mode == Net::Mode::CLIENT) {
 
 		if (!connection.Start(port, arguments.at("-ip"), mode == Net::Mode::CLIENT)) {
@@ -139,9 +147,11 @@ int main( int argc, char * argv[])
 	FlowControl flowControl;
 	
 	long long currentFileLocation = 0;
-	int bytesLeft = fileData.size();
+	int bytesLeft = buffer.size();
 
-	while (currentFileLocation != fileData.size())
+	long lostPacketCount = 0;
+
+	while ( mode == Net::Mode::SERVER || currentFileLocation != buffer.size())
 	{
 		// update flow control
 		if (connection.IsConnected()) {
@@ -178,44 +188,50 @@ int main( int argc, char * argv[])
 	
 			sendAccumulator -= 1.0f / sendRate;
 		}
-		
 
-		bytesLeft = fileData.size() - currentFileLocation;
+		if (mode == Net::Mode::CLIENT) {
 
-		std::string currentData;
-		if (bytesLeft > PacketSize) {
+			bytesLeft = buffer.size() - currentFileLocation;
 
-			currentData = fileData.substr(currentFileLocation, PacketSize);
-			currentFileLocation += PacketSize;
-			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1);
+			std::string currentData;
+			if (bytesLeft > PacketSize) {
+
+				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + PacketSize};
+				currentFileLocation += PacketSize - 1;
+				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1);
+			}
+			else if(bytesLeft < PacketSize){
+
+				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + bytesLeft};
+				currentFileLocation += bytesLeft - 1;
+				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
+			}
+
 		}
-		else {
 
-			currentData = fileData.substr(currentFileLocation, bytesLeft - 1);
-			currentFileLocation += bytesLeft;
-			connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
-		}
-
-
-		while (true)
+		// Recieve packets
+		while (mode == Net::Mode::SERVER)
 		{
-			unsigned char packet[256] = {0};
+			unsigned char packet[PacketSize] = {0};
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
-			std::cout << packet;
+			//std::cout << packet;
 			if (bytes_read == 0) {
 				
 				break;
 			}
-			
-			if (mode == Net::Mode::SERVER) {
-			
-				FileIO output("received.3gp", true, true);
-				output.Write(reinterpret_cast<const char*>(packet));
+			else {
+
+				/*FileIO output("received.jpg", true, true);
+				output.Write(reinterpret_cast<const char*>(packet));*/
+
+				std::ofstream fout("test.png", std::ios::out | std::ios::binary | std::ios::app);
+				fout.write((char*)packet, sizeof(packet) - 1);
+				fout.close();
 			}
 		}
 		
 		// show packets that were acked this frame
-		#ifndef SHOW_ACKS
+		#ifdef SHOW_ACKS
 			unsigned int * acks = NULL;
 			int ack_count = 0;
 			connection.GetReliabilitySystem().GetAcks( &acks, ack_count );
@@ -256,10 +272,9 @@ int main( int argc, char * argv[])
 		Net::wait( DeltaTime );
 	}
 	
-	Net::ShutdownSockets();
-	Net::ShutdownSockets();
+	
 
-	std::cout << std::endl << DataHash::MD5HashData(fileData) << std::endl;
+	Net::ShutdownSockets();
 
 	return 0;
 }
