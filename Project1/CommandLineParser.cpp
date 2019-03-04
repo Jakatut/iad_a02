@@ -35,6 +35,14 @@ std::map<std::string, std::string> CommandLineParser::GetArguments(int argc, cha
 		}
 	}
 
+	for (auto itr = switches.begin(); itr != switches.end(); ++itr) {
+
+		if (args.find(itr->first) == args.end()) {
+
+			args.insert(std::make_pair(itr->first, ""));
+		}
+	}
+
 	return args;
 }
 

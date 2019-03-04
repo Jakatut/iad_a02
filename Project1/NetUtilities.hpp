@@ -19,6 +19,9 @@
 #else
 #define PLATFORM PLATFORM_UNIX
 #endif
+
+#include "DataHash.hpp"
+
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <winsock2.h>
 	#pragma comment( lib, "wsock32.lib" )
@@ -41,6 +44,9 @@
 
 namespace Net
 {
+
+	const int HEADER_SIZE = 4;
+
 	// platform independent wait for n seconds
 	#if PLATFORM == PLATFORM_WINDOWS
 		void wait(float seconds);
@@ -57,15 +63,26 @@ namespace Net
 	
 	struct PacketData
 	{
-		unsigned int sequence;			// packet sequence number
-		float time;					    // time offset since packet was sent or received (depending on context)
-		int size;						// packet size in bytes
+		unsigned int sequence;
+		float time;
+		int size;
 	};
 
 	enum class Mode {
 	
 		CLIENT,
 		SERVER
+	};
+
+	struct Message {
+
+		Message(int size);
+		~Message();
+
+		std::size_t Size();
+
+		char Hash[MD5_OUTPUT_SIZE];
+		char* Data;
 	};
 
 }

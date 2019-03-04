@@ -82,7 +82,7 @@ int main( int argc, char * argv[])
 		mode = Net::Mode::CLIENT;
 
 		// Get the ip and port for the client connection address.
-		if ((arguments.find("-ip") != arguments.end()) && (arguments.find("-ip") != arguments.end())) {
+		if ((arguments.find("-ip") != arguments.end()) && (arguments.find("-port") != arguments.end())) {
 
 			int ipA = 0;
 			int ipB = 0;
@@ -224,7 +224,7 @@ int main( int argc, char * argv[])
 				/*FileIO output("received.jpg", true, true);
 				output.Write(reinterpret_cast<const char*>(packet));*/
 
-				std::ofstream fout("test.png", std::ios::out | std::ios::binary | std::ios::app);
+				std::ofstream fout("a.png", std::ios::out | std::ios::binary | std::ios::app);
 				fout.write((char*)packet, sizeof(packet) - 1);
 				fout.close();
 			}
