@@ -1,5 +1,4 @@
 #include "DataHash.hpp"
-#include "NetUtilities.hpp"
 #include "Connection.hpp"
 #include <iostream>
 
@@ -164,18 +163,15 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 		return false;
 	}
 
-	unsigned char* packet = new unsigned char[size + 4];
+	unsigned char* packet = new unsigned char[size + 4 + MD5_OUTPUT_SIZE];
 	packet[0] = (unsigned char)(protocolId >> 24);
 	packet[1] = (unsigned char)((protocolId >> 16) & 0xFF);
 	packet[2] = (unsigned char)((protocolId >> 8) & 0xFF);
 	packet[3] = (unsigned char)((protocolId) & 0xFF);
-	std::memcpy(&packet[4], data, size);
+	std::memcpy(&packet[4], DataHash::MD5HashData(data).c_str(), MD5_OUTPUT_SIZE - 1);
+	std::memcpy(&packet[4] + MD5_OUTPUT_SIZE, data, size);
 
-	Net::Message message;
-	std::memcpy(message.Data, packet, size + 4);
-	std::memcpy(message.Checksum, DataHash::MD5HashData(packet).c_str(), MD5_OUTPUT_SIZE);
-
-	bool send = socket.Send(address, &message, size + 4);
+	bool send = socket.Send(address, packet, size + 4);
 
 	delete packet;
 	return send;
@@ -185,25 +181,26 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	assert(running);
-
-	Net::Message message;
-
+	unsigned char* packet = new unsigned char[size + 4];
 	Address sender;
-	int bytes_read = socket.Receive(sender, &message, size + 4);
+	int bytes_read = socket.Receive(sender, packet, size + 4);
 
 	if (bytes_read == 0) {
 
+		delete packet;
 		return 0;
 	}
 	if (bytes_read <= 4) {
 
+		delete packet;
 		return 0;
 	}
-	if (message.Data[0] != (unsigned char)(protocolId >> 24) ||
-		message.Data[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
-		message.Data[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
-		message.Data[3] != (unsigned char)(protocolId & 0xFF)) {
+	if (packet[0] != (unsigned char)(protocolId >> 24) ||
+		packet[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
+		packet[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
+		packet[3] != (unsigned char)(protocolId & 0xFF)) {
 
+		delete packet;
 		return 0;
 	}
 	if (mode == Server && !IsConnected())
@@ -222,11 +219,13 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-		memcpy(data, &message.Data[4], bytes_read - 4);
+		memcpy(data, &packet[4], bytes_read - 4);
 
+		delete packet;
 		return bytes_read - 4;
 	}
 
+	delete packet;
 	return 0;
 }
 

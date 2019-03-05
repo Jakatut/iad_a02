@@ -57,9 +57,9 @@ namespace Net {
 				~ReliableConnection();
 
 			// Overriden Functions From "Connection"
-				bool SendPacket(const unsigned char data[], int size, std::string fileName);
+				bool SendPacket(const unsigned char data[], int size);
 
-				int ReceivePacket(Net::Message data, int size);
+				int ReceivePacket(unsigned char data[], int size);
 
 				void Update(float deltaTime);
 

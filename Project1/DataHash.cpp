@@ -41,7 +41,6 @@ std::string DataHash::MD5HashData(const std::string& dataString) {
 	return std::string{mdString};
 }
 
-
 std::string DataHash::MD5HashData(const unsigned char * dataString)
 {
 	unsigned char digest[MD5_DIGEST_LENGTH];

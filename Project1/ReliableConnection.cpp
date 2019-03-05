@@ -8,7 +8,7 @@ Net::ReliableConnection::~ReliableConnection() {
 }
 
 
-bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size, std::string fileName) {
+bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size) {
 
 	#ifdef NET_UNIT_TEST
 		if (reliabilitySystem.GetLocalSequence() & packet_loss_mask)
@@ -39,7 +39,7 @@ bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size, s
 }
 
 
-int Net::ReliableConnection::ReceivePacket(Net::Message data, int size) {
+int Net::ReliableConnection::ReceivePacket(unsigned char data[], int size) {
 
 	const int header = 12;
 	if (size <= header) {
@@ -64,7 +64,7 @@ int Net::ReliableConnection::ReceivePacket(Net::Message data, int size) {
 	ReadHeader(packet, packet_sequence, packet_ack, packet_ack_bits);
 	reliabilitySystem.PacketReceived(packet_sequence, received_bytes - header);
 	reliabilitySystem.ProcessAck(packet_ack, packet_ack_bits);
-	std::memcpy(data.Data, packet + header, received_bytes - header);
+	std::memcpy(data, packet + header, received_bytes - header);
 	delete packet;
 	return received_bytes - header;
 }

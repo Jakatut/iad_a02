@@ -1,0 +1,4 @@
+﻿  Example.cpp
+c:\users\conma\desktop\iad_a02\project1\example.cpp(150): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+c:\users\conma\desktop\iad_a02\project1\example.cpp(194): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  Project1.vcxproj -> C:\Users\conma\Desktop\iad_a02\x64\Debug\Project1.exe
