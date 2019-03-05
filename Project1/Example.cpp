@@ -58,19 +58,9 @@ int main( int argc, char * argv[])
 	std::vector<char> buffer;
 	if (arguments.find("-file") != arguments.end()) {
 
-		/*FileIO input{ arguments.at("-file"), true };
-		input.Read();
-		fileData = input.GetTextRead();
-
-		FileIO output{ "test.jpg", true };
-
-		output.Write(input.GetTextRead());*/
-
 		std::ifstream input{ arguments.at("-file"), std::ios::binary | std::ios::in };
 
 		buffer = std::vector<char>{ std::istreambuf_iterator<char>(input), {} };
-
-		
 	}
 
 	Net::Address address;
@@ -151,7 +141,7 @@ int main( int argc, char * argv[])
 
 	long lostPacketCount = 0;
 
-	while ( mode == Net::Mode::SERVER || currentFileLocation != buffer.size())
+	while ( mode == Net::Mode::SERVER || currentFileLocation < buffer.size())
 	{
 		// update flow control
 		if (connection.IsConnected()) {
@@ -205,8 +195,8 @@ int main( int argc, char * argv[])
 				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + bytesLeft};
 				currentFileLocation += bytesLeft - 1;
 				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
+				++currentFileLocation;
 			}
-
 		}
 
 		// Recieve packets
@@ -214,15 +204,11 @@ int main( int argc, char * argv[])
 		{
 			unsigned char packet[PacketSize] = {0};
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
-			//std::cout << packet;
 			if (bytes_read == 0) {
 				
 				break;
 			}
 			else {
-
-				/*FileIO output("received.jpg", true, true);
-				output.Write(reinterpret_cast<const char*>(packet));*/
 
 				std::ofstream fout("test.png", std::ios::out | std::ios::binary | std::ios::app);
 				fout.write((char*)packet, sizeof(packet) - 1);
@@ -231,7 +217,7 @@ int main( int argc, char * argv[])
 		}
 		
 		// show packets that were acked this frame
-		#ifdef SHOW_ACKS
+		#ifndef SHOW_ACKS
 			unsigned int * acks = NULL;
 			int ack_count = 0;
 			connection.GetReliabilitySystem().GetAcks( &acks, ack_count );
@@ -272,9 +258,8 @@ int main( int argc, char * argv[])
 		Net::wait( DeltaTime );
 	}
 	
-	
-
 	Net::ShutdownSockets();
+	std::cout << "File send finished.\n";
 
 	return 0;
 }
