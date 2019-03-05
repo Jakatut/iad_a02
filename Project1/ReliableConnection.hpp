@@ -59,7 +59,7 @@ namespace Net {
 			// Overriden Functions From "Connection"
 				bool SendPacket(const unsigned char data[], int size, std::string fileName);
 
-				int ReceivePacket(unsigned char data[], int size);
+				int ReceivePacket(Net::Message data, int size);
 
 				void Update(float deltaTime);
 

@@ -57,6 +57,7 @@ namespace Net
 
 	void ShutdownSockets();
 
+	const int PacketSize = 256;
 
 	struct PacketData
 	{
@@ -75,10 +76,10 @@ namespace Net
 
 	struct Message {
 
-		Message(int dataSize);
+	/*	Message(int dataSize);
 		~Message();
-
-		char* Data;
+*/
+		char Data[PacketSize];
 		char Checksum[MD5_OUTPUT_SIZE];
 	};
 

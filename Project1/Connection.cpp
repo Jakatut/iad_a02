@@ -171,7 +171,7 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 	packet[3] = (unsigned char)((protocolId) & 0xFF);
 	std::memcpy(&packet[4], data, size);
 
-	Net::Message message(size + 4);
+	Net::Message message;
 	std::memcpy(message.Data, packet, size + 4);
 	std::memcpy(message.Checksum, DataHash::MD5HashData(packet).c_str(), MD5_OUTPUT_SIZE);
 
@@ -186,16 +186,10 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	assert(running);
 
-	Net::Message message(size + 4);
+	Net::Message message;
 
 	Address sender;
 	int bytes_read = socket.Receive(sender, &message, size + 4);
-
-	// If the data hash is not the same as the one recieved, exit.
-	if (DataHash::MD5HashData(message.Data) != std::string{ message.Checksum }) {
-
-		return 0;
-	}
 
 	if (bytes_read == 0) {
 

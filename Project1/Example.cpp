@@ -34,7 +34,7 @@ const int ProtocolId = 0x11223344;
 const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
 const float TimeOut = 10.0f;
-const int PacketSize = 256;
+
 const int CLIENT_ARGUMENT_COUNT = 6;
 
 int main( int argc, char * argv[])
@@ -183,18 +183,18 @@ int main( int argc, char * argv[])
 			sendAccumulator -= 1.0f / sendRate;
 		}
 
-		if (mode == Net::Mode::CLIENT && connection.IsConnected()) {
+		if (mode == Net::Mode::CLIENT) {
 
 			bytesLeft = buffer.size() - currentFileLocation;
 
 			std::string currentData;
-			if (bytesLeft > PacketSize) {
+			if (bytesLeft > Net::PacketSize) {
 
-				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + PacketSize};
-				currentFileLocation += PacketSize - 1;
-				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1, fileName);
+				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + Net::PacketSize};
+				currentFileLocation += Net::PacketSize - 1;
+				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), Net::PacketSize - 1, fileName);
 			}
-			else if(bytesLeft < PacketSize) {
+			else if(bytesLeft < Net::PacketSize) {
 
 				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + bytesLeft};
 				currentFileLocation += bytesLeft - 1;
@@ -208,11 +208,22 @@ int main( int argc, char * argv[])
 		// Recieve packets
 		while (mode == Net::Mode::SERVER)
 		{
-			unsigned char packet[PacketSize] = {0};
-			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
+			unsigned char packet[Net::PacketSize] = {0};
+
+			Net::Message recievedMessage;
+
+			int bytes_read = connection.ReceivePacket(recievedMessage, sizeof(recievedMessage) );
+
+			// If the data hash is not the same as the one recieved, exit.
+			if (DataHash::MD5HashData(recievedMessage.Data) != std::string{ recievedMessage.Checksum }) {
+
+				std::cout << "Checksums are not equal.\n";
+				return 0;
+			}
+
 			if (bytes_read == 0) {
 
-				serverDone = true;
+				//serverDone = true;
 				break;
 			}
 			else {
