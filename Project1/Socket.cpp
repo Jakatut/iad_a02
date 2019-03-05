@@ -116,13 +116,13 @@ bool Net::Socket::Send(const Net::Address & destination, const void* data, int s
 	address.sin_addr.s_addr = htonl(destination.GetAddress());
 	address.sin_port = htons((unsigned short)destination.GetPort());
 
-	int sent_bytes = sendto(socket, reinterpret_cast<const char*>(data), size, 0, (sockaddr*)&address, sizeof(address));
+	int sent_bytes = sendto(socket, (const char*)data, size, 0, (sockaddr*)&address, sizeof(address));
 
 	return sent_bytes == size;
 }
 
 
-int Net::Socket::Receive(Net::Address & sender, void* data, int size)
+int Net::Socket::Receive(Net::Address & sender, void * data, int size)
 {
 	assert(data);
 	assert(size > 0);
@@ -139,7 +139,7 @@ int Net::Socket::Receive(Net::Address & sender, void* data, int size)
 	sockaddr_in from;
 	socklen_t fromLength = sizeof(from);
 
-	int received_bytes = recvfrom(socket, reinterpret_cast<char*>(data), size, 0, (sockaddr*)&from, &fromLength);
+	int received_bytes = recvfrom(socket, (char*)data, size, 0, (sockaddr*)&from, &fromLength);
 
 	if (received_bytes <= 0) {
 

@@ -1,4 +1,3 @@
-﻿#include "NetUtilities.hpp"
 #include "Connection.hpp"
 #include <iostream>
 
@@ -18,10 +17,8 @@ Net::Connection::Connection(unsigned int protocolId, float timeout) {
 
 Net::Connection::~Connection() {
 
-	if (IsRunning()) {
-	
+	if (IsRunning())
 		Stop();
-	}
 }
 
 
@@ -40,7 +37,6 @@ bool Net::Connection::Start(int port, std::string ip, bool client) {
 		return false;
 	}
 	running = true;
-	state = Connected;
 	OnStart();
 	return true;
 }
@@ -166,19 +162,14 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 		return false;
 	}
 
-	unsigned char* packet = new unsigned char[size + HEADER_SIZE];
-	
-	std::memcpy(&packet[HEADER_SIZE], data, size);
-	//std::memcpy(message.Hash, DataHash::MD5HashData(data).c_str(), MD5_OUTPUT_SIZE);
-
+	unsigned char* packet = new unsigned char[size + 4];
 	packet[0] = (unsigned char)(protocolId >> 24);
 	packet[1] = (unsigned char)((protocolId >> 16) & 0xFF);
 	packet[2] = (unsigned char)((protocolId >> 8) & 0xFF);
 	packet[3] = (unsigned char)((protocolId) & 0xFF);
+	std::memcpy(&packet[4], data, size);
 
-	std::memcpy(&packet[HEADER_SIZE], data, size);
-
-	bool send = socket.Send(address, packet, size + HEADER_SIZE + MD5_OUTPUT_SIZE + 1);
+	bool send = socket.Send(address, packet, size + 4);
 
 	delete packet;
 	return send;
@@ -188,18 +179,16 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	assert(running);
-	//Message recievedMessage/*(size + HEADER_SIZE + 1)*/;
-
-	unsigned char* packet = new unsigned char[size + HEADER_SIZE];
+	unsigned char* packet = new unsigned char[size + 4];
 	Address sender;
-	int bytes_read = socket.Receive(sender, packet, size + HEADER_SIZE + MD5_OUTPUT_SIZE + 1);
+	int bytes_read = socket.Receive(sender, packet, size + 4);
 
 	if (bytes_read == 0) {
 
 		delete packet;
 		return 0;
 	}
-	if (bytes_read <= HEADER_SIZE) {
+	if (bytes_read <= 4) {
 
 		delete packet;
 		return 0;
@@ -228,10 +217,10 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-		memcpy(data, &packet[HEADER_SIZE], bytes_read - HEADER_SIZE);
+		memcpy(data, &packet[4], bytes_read - 4);
 
 		delete packet;
-		return bytes_read - HEADER_SIZE;
+		return bytes_read - 4;
 	}
 
 	delete packet;
@@ -241,8 +230,9 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 int Net::Connection::GetHeaderSize() const {
 
-	return HEADER_SIZE;
+	return 4;
 }
+
 
 
 // PRIVATE MEMBER METHODS

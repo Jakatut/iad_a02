@@ -41,23 +41,6 @@ std::string DataHash::MD5HashData(const std::string& dataString) {
 	return std::string{mdString};
 }
 
-std::string DataHash::MD5HashData(const unsigned char * dataString)
-{
-	unsigned char digest[MD5_DIGEST_LENGTH];
-
-	MD5( reinterpret_cast<const unsigned char*>(dataString), strlen(reinterpret_cast<const char*>(dataString)), digest);
-
-	char mdString[MD5_OUTPUT_SIZE];
-
-	for (int i = 0; i < MD5_HALF_HASH_SIZE; i++) {
-
-		sprintf(&mdString[i * 2], "%02x", digest[i]);
-	}
-
-	return std::string{ mdString };
-	
-}
-
 
 std::stringstream DataHash::MD5HashData(const std::stringstream& dataSStream) {
 
