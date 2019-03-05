@@ -76,13 +76,10 @@ namespace Net
 
 	struct Message {
 
-		Message(int size);
-		~Message();
-
 		std::size_t Size();
 
+		char Data[305];
 		char Hash[MD5_OUTPUT_SIZE];
-		char* Data;
 	};
 
 }

@@ -151,7 +151,7 @@ int main( int argc, char * argv[])
 
 	long lostPacketCount = 0;
 
-	while ( mode == Net::Mode::SERVER || currentFileLocation != buffer.size())
+	while ( mode == Net::Mode::SERVER || currentFileLocation <= buffer.size())
 	{
 		// update flow control
 		if (connection.IsConnected()) {
@@ -231,7 +231,7 @@ int main( int argc, char * argv[])
 		}
 		
 		// show packets that were acked this frame
-		#ifdef SHOW_ACKS
+		#ifndef SHOW_ACKS
 			unsigned int * acks = NULL;
 			int ack_count = 0;
 			connection.GetReliabilitySystem().GetAcks( &acks, ack_count );

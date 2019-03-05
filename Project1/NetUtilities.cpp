@@ -38,15 +38,15 @@ bool Net::sequence_more_recent(unsigned int s1, unsigned int s2, unsigned int ma
 			((s2 > s1) && (s2 - s1 > half_max)));
 }
 
-Net::Message::Message(int size) {
-
-	Data = new char[size]();
-}
-
-Net::Message::~Message() {
-
-	delete[] Data;
-}
+//Net::Message::Message(int size) {
+//
+//	Data = new char[size]();
+//}
+//
+//Net::Message::~Message() {
+//
+//	delete[] Data;
+//}
 
 std::size_t Net::Message::Size() {
 

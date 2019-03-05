@@ -1,4 +1,4 @@
-#include "NetUtilities.hpp"
+﻿#include "NetUtilities.hpp"
 #include "Connection.hpp"
 #include <iostream>
 
@@ -96,7 +96,7 @@ void Net::Connection::Connect(const Address & address) {
 		OnDisconnect();
 	}
 	mode = Client;
-	state = Connected;
+	state = Connecting;
 	this->address = address;
 }
 
@@ -167,6 +167,10 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 	}
 
 	unsigned char* packet = new unsigned char[size + HEADER_SIZE];
+	
+	std::memcpy(&packet[HEADER_SIZE], data, size);
+	//std::memcpy(message.Hash, DataHash::MD5HashData(data).c_str(), MD5_OUTPUT_SIZE);
+
 	packet[0] = (unsigned char)(protocolId >> 24);
 	packet[1] = (unsigned char)((protocolId >> 16) & 0xFF);
 	packet[2] = (unsigned char)((protocolId >> 8) & 0xFF);
@@ -174,13 +178,8 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 
 	std::memcpy(&packet[HEADER_SIZE], data, size);
 
-	Net::Message message(size);
-	std::memcpy(message.Hash, DataHash::MD5HashData(packet).c_str(), MD5_OUTPUT_SIZE);
-	std::memcpy(message.Data, data, size + HEADER_SIZE);
+	bool send = socket.Send(address, packet, size + HEADER_SIZE + MD5_OUTPUT_SIZE + 1);
 
-	bool send = socket.Send(address, &message, message.Size());
-
-	delete packet;
 	return send;
 }
 
@@ -188,11 +187,11 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	assert(running);
-	Message recievedMessage(size + HEADER_SIZE);
+	//Message recievedMessage/*(size + HEADER_SIZE + 1)*/;
 
-
+	unsigned char* packet = new unsigned char[size + HEADER_SIZE];
 	Address sender;
-	int bytes_read = socket.Receive(sender, reinterpret_cast<Net::Message*> (&recievedMessage), size + HEADER_SIZE + MD5_OUTPUT_SIZE);
+	int bytes_read = socket.Receive(sender, packet, size + HEADER_SIZE + MD5_OUTPUT_SIZE + 1);
 
 	if (bytes_read == 0) {
 
@@ -202,10 +201,10 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 		return 0;
 	}
-	if (recievedMessage.Data[0] != (unsigned char)(protocolId >> 24) ||
-		recievedMessage.Data[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
-		recievedMessage.Data[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
-		recievedMessage.Data[3] != (unsigned char)(protocolId & 0xFF)) {
+	if (packet[0] != (unsigned char)(protocolId >> 24) ||
+		packet[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
+		packet[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
+		packet[3] != (unsigned char)(protocolId & 0xFF)) {
 
 		return 0;
 	}
@@ -225,7 +224,7 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-		memcpy(data, &recievedMessage.Data[HEADER_SIZE], bytes_read - HEADER_SIZE);
+		memcpy(data, &packet[HEADER_SIZE], bytes_read - HEADER_SIZE);
 
 		return bytes_read - HEADER_SIZE;
 	}
@@ -238,7 +237,6 @@ int Net::Connection::GetHeaderSize() const {
 
 	return HEADER_SIZE;
 }
-
 
 
 // PRIVATE MEMBER METHODS
