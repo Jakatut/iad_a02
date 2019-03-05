@@ -1,4 +1,3 @@
-#include "DataHash.hpp"
 #include "Connection.hpp"
 #include <iostream>
 
@@ -163,13 +162,12 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 		return false;
 	}
 
-	unsigned char* packet = new unsigned char[size + 4 + MD5_OUTPUT_SIZE];
+	unsigned char* packet = new unsigned char[size + 4];
 	packet[0] = (unsigned char)(protocolId >> 24);
 	packet[1] = (unsigned char)((protocolId >> 16) & 0xFF);
 	packet[2] = (unsigned char)((protocolId >> 8) & 0xFF);
 	packet[3] = (unsigned char)((protocolId) & 0xFF);
-	std::memcpy(&packet[4], DataHash::MD5HashData(data).c_str(), MD5_OUTPUT_SIZE - 1);
-	std::memcpy(&packet[4] + MD5_OUTPUT_SIZE, data, size);
+	std::memcpy(&packet[4], data, size);
 
 	bool send = socket.Send(address, packet, size + 4);
 
@@ -219,14 +217,7 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-
-		std::string{ &packet[4], &packet[4 + MD5_OUTPUT_SIZE] };
-
-		if (DataHash::MD5HashData(&packet[4 + MD5_OUTPUT_SIZE]) == std::string{ &packet[4], &packet[4 + MD5_OUTPUT_SIZE]}) {
-
-		}
-
-		memcpy(data, &packet[4 + MD5_OUTPUT_SIZE], bytes_read - 4);
+		memcpy(data, &packet[4], bytes_read - 4);
 
 		delete packet;
 		return bytes_read - 4;
