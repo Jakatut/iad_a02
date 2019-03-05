@@ -34,7 +34,7 @@ const int ProtocolId = 0x11223344;
 const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
 const float TimeOut = 100000.0f;
-const int PacketSize = 256;
+const int PacketSize = 2000;
 const int CLIENT_ARGUMENT_COUNT = 6;
 
 int main( int argc, char * argv[])
