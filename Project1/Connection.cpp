@@ -219,7 +219,14 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-		memcpy(data, &packet[4], bytes_read - 4);
+
+		std::string{ &packet[4], &packet[4 + MD5_OUTPUT_SIZE] };
+
+		if (DataHash::MD5HashData(&packet[4 + MD5_OUTPUT_SIZE]) == std::string{ &packet[4], &packet[4 + MD5_OUTPUT_SIZE]}) {
+
+		}
+
+		memcpy(data, &packet[4 + MD5_OUTPUT_SIZE], bytes_read - 4);
 
 		delete packet;
 		return bytes_read - 4;
