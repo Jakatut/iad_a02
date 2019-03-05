@@ -180,6 +180,7 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 
 	bool send = socket.Send(address, packet, size + HEADER_SIZE + MD5_OUTPUT_SIZE + 1);
 
+	delete packet;
 	return send;
 }
 
@@ -195,10 +196,12 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	if (bytes_read == 0) {
 
+		delete packet;
 		return 0;
 	}
 	if (bytes_read <= HEADER_SIZE) {
 
+		delete packet;
 		return 0;
 	}
 	if (packet[0] != (unsigned char)(protocolId >> 24) ||
@@ -206,6 +209,7 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 		packet[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
 		packet[3] != (unsigned char)(protocolId & 0xFF)) {
 
+		delete packet;
 		return 0;
 	}
 	if (mode == Server && !IsConnected())
@@ -226,9 +230,11 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 		timeoutAccumulator = 0.0f;
 		memcpy(data, &packet[HEADER_SIZE], bytes_read - HEADER_SIZE);
 
+		delete packet;
 		return bytes_read - HEADER_SIZE;
 	}
 
+	delete packet;
 	return 0;
 }
 
