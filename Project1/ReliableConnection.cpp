@@ -8,7 +8,7 @@ Net::ReliableConnection::~ReliableConnection() {
 }
 
 
-bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size) {
+bool Net::ReliableConnection::SendPacket(const unsigned char data[], int size, std::string fileName) {
 
 	#ifdef NET_UNIT_TEST
 		if (reliabilitySystem.GetLocalSequence() & packet_loss_mask)

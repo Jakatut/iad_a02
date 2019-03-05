@@ -33,7 +33,7 @@ const int ClientPort = 30001;
 const int ProtocolId = 0x11223344;
 const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
-const float TimeOut = 100000.0f;
+const float TimeOut = 10.0f;
 const int PacketSize = 256;
 const int CLIENT_ARGUMENT_COUNT = 6;
 
@@ -55,10 +55,14 @@ int main( int argc, char * argv[])
 
 	// Get the file data.
 	std::string fileData = "No file selected.";
+	std::string fileName = "file";
 	std::vector<char> buffer;
+
 	if (arguments.find("-file") != arguments.end()) {
 
-		std::ifstream input{ arguments.at("-file"), std::ios::binary | std::ios::in };
+		fileName = arguments.at("-file");
+
+		std::ifstream input{ fileName, std::ios::binary | std::ios::in };
 
 		buffer = std::vector<char>{ std::istreambuf_iterator<char>(input), {} };
 	}
@@ -179,7 +183,7 @@ int main( int argc, char * argv[])
 			sendAccumulator -= 1.0f / sendRate;
 		}
 
-		if (mode == Net::Mode::CLIENT) {
+		if (mode == Net::Mode::CLIENT && connection.IsConnected()) {
 
 			bytesLeft = buffer.size() - currentFileLocation;
 
@@ -188,16 +192,18 @@ int main( int argc, char * argv[])
 
 				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + PacketSize};
 				currentFileLocation += PacketSize - 1;
-				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1);
+				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), PacketSize - 1, fileName);
 			}
-			else if(bytesLeft < PacketSize){
+			else if(bytesLeft < PacketSize) {
 
 				currentData = std::string{ buffer.begin() + currentFileLocation, buffer.begin() + currentFileLocation + bytesLeft};
 				currentFileLocation += bytesLeft - 1;
-				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1);
+				connection.SendPacket(reinterpret_cast<const unsigned char*>(currentData.c_str()), bytesLeft - 1, fileName);
 				++currentFileLocation;
 			}
 		}
+
+		bool serverDone = false;
 
 		// Recieve packets
 		while (mode == Net::Mode::SERVER)
@@ -205,7 +211,8 @@ int main( int argc, char * argv[])
 			unsigned char packet[PacketSize] = {0};
 			int bytes_read = connection.ReceivePacket( packet, sizeof(packet) );
 			if (bytes_read == 0) {
-				
+
+				serverDone = true;
 				break;
 			}
 			else {
@@ -214,6 +221,11 @@ int main( int argc, char * argv[])
 				fout.write((char*)packet, sizeof(packet) - 1);
 				fout.close();
 			}
+		}
+
+		if (serverDone) {
+
+			break;
 		}
 		
 		// show packets that were acked this frame
@@ -235,7 +247,6 @@ int main( int argc, char * argv[])
 
 		// show connection stats
 		statsAccumulator += DeltaTime;
-
 		while ( statsAccumulator >= 0.25f && connection.IsConnected() )
 		{
 			float rtt = connection.GetReliabilitySystem().GetRoundTripTime();
@@ -259,7 +270,8 @@ int main( int argc, char * argv[])
 	}
 	
 	Net::ShutdownSockets();
-	std::cout << "File send finished.\n";
+
+	std::cout << "Done.\n";
 
 	return 0;
 }

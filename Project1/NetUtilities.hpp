@@ -19,6 +19,9 @@
 #else
 #define PLATFORM PLATFORM_UNIX
 #endif
+
+#include "DataHash.hpp"
+
 #if PLATFORM == PLATFORM_WINDOWS
 	#include <winsock2.h>
 	#pragma comment( lib, "wsock32.lib" )
@@ -50,11 +53,11 @@ namespace Net
 	#endif
 
 	bool InitializeSockets();
+	bool sequence_more_recent(unsigned int s1, unsigned int s2, unsigned int max_sequence);
 
 	void ShutdownSockets();
-	
-	bool sequence_more_recent(unsigned int s1, unsigned int s2, unsigned int max_sequence);
-	
+
+
 	struct PacketData
 	{
 		unsigned int sequence;			// packet sequence number
@@ -62,10 +65,21 @@ namespace Net
 		int size;						// packet size in bytes
 	};
 
+
 	enum class Mode {
 	
 		CLIENT,
 		SERVER
+	};
+
+
+	struct Message {
+
+		Message(int dataSize);
+		~Message();
+
+		char* Data;
+		char Checksum[MD5_OUTPUT_SIZE];
 	};
 
 }

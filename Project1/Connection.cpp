@@ -1,3 +1,5 @@
+#include "DataHash.hpp"
+#include "NetUtilities.hpp"
 #include "Connection.hpp"
 #include <iostream>
 
@@ -169,7 +171,11 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 	packet[3] = (unsigned char)((protocolId) & 0xFF);
 	std::memcpy(&packet[4], data, size);
 
-	bool send = socket.Send(address, packet, size + 4);
+	Net::Message message(size + 4);
+	std::memcpy(message.Data, packet, size + 4);
+	std::memcpy(message.Checksum, DataHash::MD5HashData(packet).c_str(), MD5_OUTPUT_SIZE);
+
+	bool send = socket.Send(address, &message, size + 4);
 
 	delete packet;
 	return send;
@@ -179,26 +185,31 @@ bool Net::Connection::SendPacket(const unsigned char data[], int size) {
 int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 
 	assert(running);
-	unsigned char* packet = new unsigned char[size + 4];
+
+	Net::Message message(size + 4);
+
 	Address sender;
-	int bytes_read = socket.Receive(sender, packet, size + 4);
+	int bytes_read = socket.Receive(sender, &message, size + 4);
+
+	// If the data hash is not the same as the one recieved, exit.
+	if (DataHash::MD5HashData(message.Data) != std::string{ message.Checksum }) {
+
+		return 0;
+	}
 
 	if (bytes_read == 0) {
 
-		delete packet;
 		return 0;
 	}
 	if (bytes_read <= 4) {
 
-		delete packet;
 		return 0;
 	}
-	if (packet[0] != (unsigned char)(protocolId >> 24) ||
-		packet[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
-		packet[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
-		packet[3] != (unsigned char)(protocolId & 0xFF)) {
+	if (message.Data[0] != (unsigned char)(protocolId >> 24) ||
+		message.Data[1] != (unsigned char)((protocolId >> 16) & 0xFF) ||
+		message.Data[2] != (unsigned char)((protocolId >> 8) & 0xFF) ||
+		message.Data[3] != (unsigned char)(protocolId & 0xFF)) {
 
-		delete packet;
 		return 0;
 	}
 	if (mode == Server && !IsConnected())
@@ -217,13 +228,11 @@ int Net::Connection::ReceivePacket(unsigned char data[], int size) {
 			OnConnect();
 		}
 		timeoutAccumulator = 0.0f;
-		memcpy(data, &packet[4], bytes_read - 4);
+		memcpy(data, &message.Data[4], bytes_read - 4);
 
-		delete packet;
 		return bytes_read - 4;
 	}
 
-	delete packet;
 	return 0;
 }
 

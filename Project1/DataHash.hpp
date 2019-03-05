@@ -15,6 +15,7 @@ class DataHash
 
 		std::string static MD5HashData(const char* dataString);
 		std::string static MD5HashData(const std::string& dataString);
+		std::string static MD5HashData(const unsigned char* dataString);
 		std::stringstream static MD5HashData(const std::stringstream& dataSStream);
 		std::vector<unsigned char> static MD5HashData(const std::vector<unsigned char>& dataVector);
 };
